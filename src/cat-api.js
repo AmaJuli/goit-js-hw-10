@@ -1,27 +1,38 @@
-const URL = 'https://api.thecatapi.com/v1/';
 
-const options = {
-  headers: {
-    'x-api-key':
-      'live_LVTjDkbBC8d8WUnhtAkzQftUgDngEnavyUVEoaQixFEc0HQBqpu8EIbo5ZdggVqr',
-  },
-};
 
-function fetchBreeds(url) {
-  return fetch(url).then(response => {
-    if (!response.ok) {
+export { fetchBreeds };
+export { fetchCatByBreed };
+import { selectEl } from './index'
+import { loaderEl } from './index'
+import { errorEl } from './index';
+
+function fetchBreeds() {
+  selectEl.classList.add('none')
+  loaderEl.classList.add('block')
+  
+    const apiKey = 'live_LVTjDkbBC8d8WUnhtAkzQftUgDngEnavyUVEoaQixFEc0HQBqpu8EIbo5ZdggVqr'
+    const baseUrl = 'https://api.thecatapi.com/v1/breeds'
+   return fetch(`${baseUrl}?api_key=${apiKey}`)
+      .then(response => {
+        if (!response.ok) {
+     
       throw new Error(response.status);
     }
     return response.json();
-  });
+  })
 }
-
-function fetchCatByBreed(url) {
-  return fetch(url, options).then(response => {
-    if (!response.ok) {
+function fetchCatByBreed(breedId) {
+  errorEl.classList.remove('block')
+  selectEl.classList.add('none')
+  loaderEl.classList.add('block')
+  
+  const apiKey = 'live_LVTjDkbBC8d8WUnhtAkzQftUgDngEnavyUVEoaQixFEc0HQBqpu8EIbo5ZdggVqr'
+  return fetch(`https://api.thecatapi.com/v1/images/search?breed_ids=${breedId}&api_key=${apiKey}`)
+    .then(response => {
+      if (!response.ok) {
+       
       throw new Error(response.status);
-    }
-    return response.json();
-  });
+      }
+      return response.json()
+  })
 }
-export { URL, fetchBreeds, fetchCatByBreed };

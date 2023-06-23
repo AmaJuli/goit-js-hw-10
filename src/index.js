@@ -1,118 +1,72 @@
-import { URL, fetchBreeds, fetchCatByBreed } from './cat-api.js';
-import SlimSelect from 'slim-select';
-import { Notify } from 'notiflix/build/notiflix-notify-aio';
-import 'slim-select/dist/slimselect.css';
+import { fetchBreeds } from './cat-api'
+import { fetchCatByBreed } from './cat-api'
+export { selectEl }
+export { loaderEl }
+export{errorEl}
 
-function getRefs() {
-  return {
-    select: document.querySelector('.breed-select'),
-    loader: document.querySelector('.loader'),
-    error: document.querySelector('.error'),
-    info: document.querySelector('.cat-info'),
-  };
-}
+const divEl = document.querySelector('.cat-info')
+const selectEl = document.querySelector('.breed-select')
+const loaderEl = document.querySelector('.loader')
+const errorEl = document.querySelector('.error')
 
-const refs = getRefs();
-refs.select.style.maxWidth = '360px';
-isHidden([refs.select, refs.error, refs.info]);
-isVisually([refs.loader]);
+fetchBreeds()
+    .then((breeds) => renderBreedCats(breeds))
+    .catch((error) => addRemoveClass())
 
-const selectInstance = new SlimSelect({
-  select: refs.select,
-  settings: {
-    placeholderText: 'Choose the breed of the cat',
-    allowDeselect: true,
-    maxSelected: 1,
-  },
-});
-
-function isVisually(arr) {
-  arr.forEach(element => {
-    if (element.classList.contains('visually-hidden')) {
-      element.classList.remove('visually-hidden');
+function renderBreedCats(breeds) {
+  const breedCats =  breeds.map(({ id, name }) => ` <option value="${id}">${name}</option> ` ) 
+    return selectEl.innerHTML = breedCats,
+        selectEl.classList.remove('none'),
+    loaderEl.classList.remove('block')
     }
-  });
-}
 
-function isHidden(arr) {
-  arr.forEach(element => {
-    if (!element.classList.contains('visually-hidden')) {
-      element.classList.add('visually-hidden');
+selectEl.addEventListener('change', (e) => {
+fetchCatByBreed(e.currentTarget.value)
+        .then((cat) => createCatInforms(cat))
+        .catch((error) => addRemoveClass())
+})
+
+function createCatInforms(arry) {
+    let url;
+    let description;
+    let temperament;
+    let name;
+    
+    if (!arry.length>0) {
+        return addClass()
+        
+    } else {
+            arry.forEach(element => {
+        
+            description = element.breeds[0].description,
+            url = element.url,
+            temperament = element.breeds[0].temperament,
+            name = element.breeds[0].name
+
+    });
     }
-  });
+
+
+    return divEl.innerHTML =
+        ` <img src="${url}" alt="Cat" width="460"  />
+        <div class ="box">
+        <h1>${name}</h1>
+        <p>${description}</p>
+        <p><b>Temperament:</b>${temperament}</p></div>`,
+           selectEl.classList.remove('none'),
+    loaderEl.classList.remove('block')
+
 }
 
-let str = 'breeds';
-let url = URL + str;
-fetchBreeds(url).then(addDataSelectBreeds).catch(isError);
+function addRemoveClass() {
+  return loaderEl.classList.remove('block'),
+  errorEl.classList.add('block')
+  }       
 
-function addDataSelectBreeds(arrBreeds) {
-  if (!arrBreeds || arrBreeds.length === 0) {
-    isHidden([refs.loader]);
-    isVisually([refs.error]);
-    Notify.failure(refs.error.textContent);
-    return;
-  }
-  const dataSelectBreeds = arrBreeds.map(({ name, id }) => {
-    return { text: name, value: id };
-  });
-  const firstOption = [
-    {
-      text: '',
-      placeholder: true,
-    },
-  ];
-  const allOptions = [...firstOption, ...dataSelectBreeds];
-  selectInstance.setData(allOptions);
-  isHidden([refs.loader, refs.error, refs.info]);
-  isVisually([refs.select]);
+function addClass() {
+    return selectEl.classList.remove('none'),
+    loaderEl.classList.remove('block'),
+        errorEl.classList.add('block'),
+    divEl.innerHTML=''
 }
-
-function isError(error) {
-  isVisually([refs.error]);
-  isHidden([refs.loader, refs.info]);
-  Notify.failure(refs.error.textContent);
-  console.error('Error status: ', error);
-}
-
-refs.select.addEventListener('change', onSelect);
-
-function onSelect(event) {
-  if (event.target.value === '') {
-    return;
-  }
-  str = 'images/search?';
-  const searchParams = new URLSearchParams({
-    breed_ids: event.target.value,
-    limit: 2,
-    size: 'small',
-  });
-  url = URL + str + searchParams;
-  isHidden([refs.info, refs.error]);
-  isVisually([refs.loader]);
-  fetchCatByBreed(url).then(addInfo).catch(isError);
-}
-
-function addInfo(arrInfo) {
-  const markUp =
-    arrInfo
-      .map(
-        ({ url, breeds }) =>
-          `<img
-             src="${url}"
-             alt="${breeds[0].alt_names || breeds[0].name || 'cat image'}"
-             width="300"
-             height="300"
-          />`
-      )
-      .join('') +
-    `<div class="info">
-            <h1 class="info-title">${arrInfo[0].breeds[0].name}</h1>
-            <p class="info-description">${arrInfo[0].breeds[0].description}</p>
-            <p class="info-description">Country of Origin: ${arrInfo[0].breeds[0].origin}</p>
-            <p class="info-description">Temperament: ${arrInfo[0].breeds[0].temperament}</p>
-     </div>`;
-  refs.info.innerHTML = markUp;
-  isHidden([refs.loader]);
-  isVisually([refs.info]);
-}
+    
